@@ -9,16 +9,21 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class CSV {
 
 	public static void main(String[] args) {
 		String keysLine = ",,CURRENT,,,Jan Overdue,,Dec Overdue,,,Pre-Dec Overdue,,AMOUNT DUE,,";
 		String valuesLine = ",,\"$2,216.50\",,,$247.50,,$811.11,,,\"$2,805.14\",,\"$6,080.25\",,";
+//		System.out.println(createKeyValuePairsRemoveBlankFields(keysLine, valuesLine));
 		
+		keysLine = ",CURRENT,,,,,,AMOUNT DUE,";
+		valuesLine = ",0.00 ,0.00 ,0.00 ,0.00 ,,\"1,650.00 \",\"$1,650.00\",";
 		System.out.println(createKeyValuePairs(keysLine, valuesLine));
 	}
 	
-	public static String[] removeBlankLines(List<String> allLines) {
+	public static String[] removeEmptyLines(List<String> allLines) {
 		List<String> cleanedLines = new ArrayList<>();
 		for (String line : allLines) {
 			String lineWithoutCommas = line.replaceAll(",", "");
@@ -29,7 +34,7 @@ public class CSV {
 		return cleanedLines.stream().toArray(String[]::new);
 	}
 	
-	public static Map<String, String> createKeyValuePairs(String keysLine, String valuesLine) {
+	public static Map<String, String> createKeyValuePairsRemoveBlankFields(String keysLine, String valuesLine) {
 		List<String> keys = removeBlankFields(keysLine);
 		List<String> values = removeBlankFields(valuesLine);
 		
@@ -40,25 +45,31 @@ public class CSV {
 		return map;
 	}
 	
-	// TODO - not working
-	@Deprecated
-	public static List<Map<String, String>> createKeyValuePairs(String keysLine, List<String> valuesLines) {
-		List<Map<String, String>> result = new ArrayList<>();
-		
-		List<String> keys = removeBlankFields(keysLine);
-		
-		for(String valuesLine : valuesLines) {
-			List<String> values = removeBlankFields(valuesLine);
-			Map<String, String> map = IntStream.range(0, keys.size())
-		            .boxed()
-		            .collect(Collectors.toMap(i -> keys.get(i), i -> values.get(i)));
-			
-			result.add(map);
+	public static Map<String, String> createKeyValuePairs(String keysLine, String valuesLine) {
+		List<String> keys = new ArrayList<>();
+		int k = 1;
+		for (String element : split(keysLine)) {
+			if (StringUtils.isBlank(element)) {
+				element = "blank_key_" + (k++);
+			}
+			keys.add(element);
 		}
+		List<String> values = new ArrayList<>();
+		int v = 1;
+		for (String element : split(valuesLine)) {
+			if (StringUtils.isBlank(element)) {
+				element = "blank_value_" + (v++);
+			}
+			values.add(element);
+		}
+
+		Map<String, String> map = IntStream.range(0, keys.size())
+	            .boxed()
+	            .collect(Collectors.toMap(i -> keys.get(i), i -> values.get(i)));
 		
-		return result;
+		return map;
 	}
-	
+
 	public static List<String> removeBlankFields(String rawLine) {
 		List<String> rawFields = Arrays.asList(split(rawLine));
 		ArrayList<String> fields = new ArrayList<String>(rawFields);

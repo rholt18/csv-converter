@@ -60,7 +60,7 @@ public class FileConverter {
 
 				List<String> linesList = stream.collect(Collectors.toList());
 //				String[] lines = linesList.toArray(new String[linesList.size()]);
-				String[] lines = CSV.removeBlankLines(linesList);
+				String[] lines = CSV.removeEmptyLines(linesList);
 				DataHolder data = template.parseText(lines);
 //				System.out.println(data);
 				if (data.isComplete()) {

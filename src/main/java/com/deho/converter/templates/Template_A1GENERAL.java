@@ -14,7 +14,6 @@ public class Template_A1GENERAL implements Template {
 	private static final String COMPANY_NAME = FILENAME.substring(0, FILENAME.indexOf("."));
 
 	private static final String STATEMENT_AS_AT_DATE_IDENTIFIER = ",,,,,,,,,,,AMOUNT,,,,Date,,";
-	private static final String VENDOR_CODE_IDENTIFIER = "a";
 	private static final String REC_AS_AT_HB_DATE_IDENTIFIER = "c";
 	private static final String TOTAL_OUTSTANDING_BALANCE_IDENTIFIER = "AMOUNT";
 	private static final String SINCE_PAID_BALANCES_IDENTIFIER = ",DATE";
@@ -43,7 +42,7 @@ public class Template_A1GENERAL implements Template {
 			if (trimmed.equals(STATEMENT_AS_AT_DATE_IDENTIFIER)) {
 				String keys = trimmed;
 				String values = lines[j + 1].trim();
-				Map<String, String> keyValuePairs = CSV.createKeyValuePairs(keys, values);
+				Map<String, String> keyValuePairs = CSV.createKeyValuePairsRemoveBlankFields(keys, values);
 				data.setStatementAsAtDate(keyValuePairs.get("Date"));
 				
 				data.setTotalOutstandingBalance(keyValuePairs.get(TOTAL_OUTSTANDING_BALANCE_IDENTIFIER));
