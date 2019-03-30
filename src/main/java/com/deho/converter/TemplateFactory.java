@@ -42,10 +42,10 @@ public class TemplateFactory {
 	}
 
 	private static void addTemplate(Path pathName) {
-		System.out.println(pathName);
+//		System.out.println(pathName);
 		String fileName = pathName.getFileName().toString().replaceAll(" ", "").toUpperCase();
 		String name = fileName.substring(0, fileName.indexOf("."));
-		System.out.println(name);
+//		System.out.println(name);
 		Template template = fromString(PACKAGE_NAME + "Template_" + name);
 		if (template != null) {
 			templates.add(template);

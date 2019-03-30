@@ -5,6 +5,7 @@ import java.util.Map;
 
 import com.deho.converter.CSV;
 import com.deho.converter.DataHolder;
+import com.deho.converter.FileConverter;
 import com.deho.converter.Template;
 
 public class Template_1300LOCATE implements Template {
@@ -14,7 +15,6 @@ public class Template_1300LOCATE implements Template {
 
 	private static final String STATEMENT_AS_AT_DATE_IDENTIFIER = "STATEMENT as";
 	private static final String VENDOR_CODE_IDENTIFIER = "a";
-	private static final String BUSINESS_NAME_IDENTIFIER = "b";
 	private static final String REC_AS_AT_HB_DATE_IDENTIFIER = "c";
 	private static final String TOTAL_OUTSTANDING_BALANCE_IDENTIFIER = "AMOUNT DUE";
 	private static final String SINCE_PAID_BALANCES_IDENTIFIER = ",DATE";
@@ -31,14 +31,15 @@ public class Template_1300LOCATE implements Template {
 	@Override
 	public DataHolder parseText(String[] lines) {
 		data.setVendorCode("TBC");
-		data.setBusinessName(COMPANY_NAME);
 		data.setReconciliationAsAtHBPaymentDate("TBC");
 		data.setSincePaidBalances(Arrays.asList(new String[] {"TBC"}));
 
 		for (int i = 1, j = 0; i <= lines.length; i++, j++) {
 			String trimmed = lines[j].trim();
-			System.out.println(trimmed);
-
+			if (FileConverter.debugOutput()) {
+				System.out.println(trimmed);
+			}
+			
 			if (trimmed.startsWith(STATEMENT_AS_AT_DATE_IDENTIFIER)) {
 				data.setStatementAsAtDate(trimmed.substring(
 						trimmed.indexOf(STATEMENT_AS_AT_DATE_IDENTIFIER) + STATEMENT_AS_AT_DATE_IDENTIFIER.length(),
