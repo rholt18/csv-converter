@@ -71,7 +71,7 @@ public class FileConverterTest {
 			actualLines.forEach(actual::append);
 
 			if (DEBUG) {
-				System.out.println("Expected " + fileName + ":\n" + expected.toString());
+				System.out.println("Expected output for file " + fileName + ":\n" + expected.toString());
 				System.out.println("Actual " + fileName + ":\n" + actual.toString());
 			}
 			
