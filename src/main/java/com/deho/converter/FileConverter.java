@@ -18,7 +18,7 @@ public class FileConverter {
 
 	public static void main(String[] args) {
 		if (args == null || args.length == 0) {
-			System.err.println("Need to supply the dirctory of the input files");
+			System.err.println("Need to supply the base directory of the files");
 			System.exit(-1);
 		}
 		String baseDir = args[0];
