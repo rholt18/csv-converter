@@ -24,16 +24,16 @@ public class FileConverter {
 		String baseDir = args[0];
 		String inputDir = baseDir + "input-csvs/"; // "/apps/converter/input-csvs/"
 		String datetimeExt = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmm")) + "/";
-		String outputDir = baseDir + "output-csvs/"	+ datetimeExt;
-		String failedProcessingDir = baseDir + "not-processed/"	+ datetimeExt;
-		
+		String outputDir = baseDir + "output-csvs/" + datetimeExt;
+		String failedProcessingDir = baseDir + "not-processed/" + datetimeExt;
+
 		createDirIfMissing(outputDir);
 		createDirIfMissing(failedProcessingDir);
-		
+
 		parseCSVDocument(inputDir, outputDir, failedProcessingDir);
-		
+
 	}
-	
+
 	public static boolean debugOutput() {
 		return false;
 	}
@@ -51,46 +51,18 @@ public class FileConverter {
 		}
 	}
 
-	private static void parseCSVDocument(String inputDir, String outputDir, String failedProcessingDir) {
+	public static void parseCSVDocument(String inputDir, String outputDir, String failedProcessingDir) {
 		List<Template> templatesFailedDuringProcessing = new ArrayList<Template>();
 		List<Template> templates = TemplateFactory.getTemplates(inputDir);
 		for (Template template : templates) {
-			try (Stream<String> stream = Files
-					.lines(Paths.get(inputDir + template.getData().getFileName()))) {
-
-				List<String> linesList = stream.collect(Collectors.toList());
-//				String[] lines = linesList.toArray(new String[linesList.size()]);
-				String[] lines = CSV.removeEmptyLines(linesList);
-				DataHolder data = template.parseText(lines);
-//				System.out.println(data);
-				if (data.isComplete()) {
-					createOutput(data, outputDir);
-				} else {
-					System.err.println("The data was not completed for file [" + template.getData().getFileName() + "] so adding it to the Files Not Processed folder");
-					templatesFailedDuringProcessing.add(template);
-					try {
-						copyCSVToDir(failedProcessingDir, inputDir, template.getData().getFileName());
-					} catch (IOException e1) {
-						System.err.println("Failed to copy the CSV that failed processing into the failed processing folder, blimey!");
-						System.err.println("Failed processing folder [" + failedProcessingDir + "]");
-						System.err.println("Failed file that was trying to copy [" + (inputDir + template.getData().getFileName()) + "]");
-						e1.printStackTrace();
-					}
-				}
-
-			} catch (IOException e) {
-				templatesFailedDuringProcessing.add(template);
-				e.printStackTrace();
-				try {
-					copyCSVToDir(failedProcessingDir, inputDir, template.getData().getFileName());
-				} catch (IOException e1) {
-					System.err.println("Failed to copy the CSV that failed processing into the failed processing folder, blimey!");
-					System.err.println("Failed processing folder [" + failedProcessingDir + "]");
-					System.err.println("Failed file that was trying to copy [" + (inputDir + template.getData().getFileName()) + "]");
-					e1.printStackTrace();
-				}
-			}
+			processFile(inputDir, outputDir, failedProcessingDir, templatesFailedDuringProcessing, template);
 		}
+
+		outputSummaryDetails(inputDir, outputDir, failedProcessingDir, templatesFailedDuringProcessing, templates);
+	}
+
+	private static void outputSummaryDetails(String inputDir, String outputDir, String failedProcessingDir, List<Template> templatesFailedDuringProcessing,
+			List<Template> templates) {
 		List<String> templatesnotfound = TemplateFactory.getTemplatesnotfound();
 		int totalTemplatesToProcess = templates.size() + templatesnotfound.size();
 		int totalTemplatesProcessed = templates.size() - templatesFailedDuringProcessing.size();
@@ -107,8 +79,39 @@ public class FileConverter {
 		}
 	}
 
-	private static void copyCSVToDir(String failedProcessingDir, String inputDir, String fileName) throws IOException {
-		Files.copy(Paths.get(inputDir + fileName), Paths.get(failedProcessingDir + fileName), StandardCopyOption.REPLACE_EXISTING);
+	public static void processFile(String inputDir, String outputDir, String failedProcessingDir, List<Template> templatesFailedDuringProcessing,
+			Template template) {
+		String fileName = template.getData().getFileName();
+		try (Stream<String> stream = Files.lines(Paths.get(inputDir + fileName))) {
+			List<String> linesList = stream.collect(Collectors.toList());
+			String[] lines = CSV.removeEmptyLines(linesList);
+			DataHolder data = template.parseText(lines);
+			if (data.isComplete()) {
+				createOutput(data, outputDir);
+			} else {
+				System.err.println("The data was not completed for file [" + fileName + "] so adding it to the Files Not Processed folder");
+				templatesFailedDuringProcessing.add(template);
+				try {
+					copyCSVToDir(failedProcessingDir, inputDir, fileName);
+				} catch (IOException e1) {
+					System.err.println("Failed to copy the CSV that failed processing into the failed processing folder, blimey!");
+					System.err.println("Failed processing folder [" + failedProcessingDir + "]");
+					System.err.println("Failed file that was trying to copy [" + (inputDir + fileName) + "]");
+					e1.printStackTrace();
+				}
+			}
+		} catch (IOException e) {
+			templatesFailedDuringProcessing.add(template);
+			e.printStackTrace();
+			try {
+				copyCSVToDir(failedProcessingDir, inputDir, fileName);
+			} catch (IOException e1) {
+				System.err.println("Failed to copy the CSV that failed processing into the failed processing folder, blimey!");
+				System.err.println("Failed processing folder [" + failedProcessingDir + "]");
+				System.err.println("Failed file that was trying to copy [" + (inputDir + fileName) + "]");
+				e1.printStackTrace();
+			}
+		}
 	}
 
 	private static void createOutput(DataHolder data, String outputDir) throws FileNotFoundException {
@@ -119,8 +122,7 @@ public class FileConverter {
 	private static void convertToCSV(DataHolder data, String outputDir) throws FileNotFoundException {
 		File outputFileName = new File(data.getFileName());
 		try (PrintWriter pw = new PrintWriter(outputDir + outputFileName)) {
-			pw.println(
-					"Vendor Code, Business Name, Reconciliation As At HB Date, Statement As At Date, Total Outstanding Balance, Since Paid Balance");
+			pw.println("Vendor Code, Business Name, Reconciliation As At HB Date, Statement As At Date, Total Outstanding Balance, Since Paid Balance");
 
 			List<String> sincePaidBalances = data.getSincePaidBalances();
 			if (sincePaidBalances.isEmpty()) {
@@ -138,8 +140,12 @@ public class FileConverter {
 	}
 
 	private static String getCSVOutputLine(DataHolder data, String sincePaidBalance) {
-		return data.getVendorCode() + "," + data.getBusinessName() + "," + data.getReconciliationAsAtHBPaymentDate()
-				+ "," + data.getStatementAsAtDate() + "," + data.getTotalOutstandingBalance() + "," + sincePaidBalance;
+		return data.getVendorCode() + "," + data.getBusinessName() + "," + data.getReconciliationAsAtHBPaymentDate() + "," + data.getStatementAsAtDate() + ","
+				+ data.getTotalOutstandingBalance() + "," + sincePaidBalance;
+	}
+
+	private static void copyCSVToDir(String failedProcessingDir, String inputDir, String fileName) throws IOException {
+		Files.copy(Paths.get(inputDir + fileName), Paths.get(failedProcessingDir + fileName), StandardCopyOption.REPLACE_EXISTING);
 	}
 
 }
