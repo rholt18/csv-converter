@@ -72,7 +72,7 @@ public class FileConverterTest {
 
 			if (DEBUG) {
 				System.out.println("Expected output for file " + fileName + ":\n" + expected.toString());
-				System.out.println("Actual " + fileName + ":\n" + actual.toString());
+				System.out.println("Actual output for file " + fileName + ":\n" + actual.toString());
 			}
 			
 			if (!actual.toString().equals(expected.toString())) {
